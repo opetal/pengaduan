@@ -1,19 +1,9 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
 use App\Http\Controllers\AspirasiController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\AuthController;
+use App\Models\Aspirasi;  // ← Tambah ini
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -30,16 +20,26 @@ Route::middleware('guest')->group(function () {
 
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
+// Dashboard route
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
     if ($user->role === 'admin') {
-        $aspirasi = App\Models\Aspirasi::count();
-        return view('dashboard.admin', compact('aspirasi'));
+        $aspirasi = Aspirasi::count();
+        $pending = Aspirasi::where('status', 'pending')->count();
+        $diproses = Aspirasi::where('status', 'diproses')->count();
+        $selesai = Aspirasi::where('status', 'selesai')->count();
+        
+        return view('dashboard.admin', compact('aspirasi', 'pending', 'diproses', 'selesai'));
     }
 
+    // Untuk Siswa
     $aspirasi = $user->aspirasi()->count();
-    return view('dashboard.siswa', compact('aspirasi'));
+    $pending = $user->aspirasi()->where('status', 'pending')->count();
+    $diproses = $user->aspirasi()->where('status', 'diproses')->count();
+    $selesai = $user->aspirasi()->where('status', 'selesai')->count();
+    
+    return view('dashboard.siswa', compact('aspirasi', 'pending', 'diproses', 'selesai'));
 })->middleware('auth')->name('dashboard');
 
 // Aspirasi routes
@@ -55,4 +55,3 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::resource('kategori', KategoriController::class)->except(['show']);
-
